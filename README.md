@@ -75,6 +75,8 @@ OPENAI_API_KEY=your_api_key_here
 
 ## 注意
 - 该项目由cursor转码+人工校验，可能会有错误，请提issue
+- 搜索引擎由原来的google改为baidu
+- 内部打印的字符转为中文
 - 未实现gif录像功能
 
 
