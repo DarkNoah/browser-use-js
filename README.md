@@ -1,6 +1,6 @@
 # Browser-Use-JS
 
-使用AI控制您的浏览器 - TypeScript版本。这是[Browser-Use](https://github.com/browser-use/browser-use) Python库的TypeScript/Node.js移植版本。
+使用AI控制您的浏览器 - TypeScript版本。这是[Browser-Use](https://github.com/browser-use/browser-use) Python库的TypeScript/Node.js移植版本非官方版本。
 
 ## 简介
 
@@ -73,6 +73,12 @@ OPENAI_API_KEY=your_api_key_here
 - 📊 DOM处理
 - 🔄 多标签页支持
 
+## 注意
+- 该项目由cursor转码+人工校验，可能会有错误，请提issue
+- 未实现gif录像功能
+
+
+
 ## 示例
 
 查看[examples](./examples)目录以获取更多示例代码。
@@ -88,3 +94,14 @@ ISC
 ## 致谢
 
 该项目是[Browser-Use](https://github.com/browser-use/browser-use) Python库的TypeScript移植版本，感谢原始项目的作者创建了这个出色的工具。 
+
+## Citation
+```bibtex
+@software{browser_use2024,
+  author = {Müller, Magnus and Žunič, Gregor},
+  title = {Browser Use: Enable AI to control your browser},
+  year = {2024},
+  publisher = {GitHub},
+  url = {https://github.com/browser-use/browser-use}
+}
+```

@@ -1,7 +1,8 @@
 {
   "name": "browser-use-js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Enable AI to control your browser - TypeScript version",
+  "homepage": "https://github.com/DarkNoah/browser-use-js#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -18,8 +19,8 @@
     "langchain",
     "playwright"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "noah",
+  "license": "MIT",
   "dependencies": {
     "@langchain/core": "^0.3.43",
     "@langchain/openai": "^0.5.4",
