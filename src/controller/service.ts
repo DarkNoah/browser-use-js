@@ -29,7 +29,7 @@ import { timeExecutionAsync, convertHtmlToMarkdown } from '../utils';
 import { ActionModel } from './registry/views';
 import z from 'zod';
 import fs from 'fs';
-import pdfParse from 'pdf-parse';
+import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 
 /**
  * 控制器类
@@ -311,10 +311,12 @@ export class Controller {
 
         //const pdfPath = `./${Date.now()}.pdf`;
         //fs.writeFileSync(pdfPath, pdfBuffer);
-        const pdfData = await pdfParse(pdfBuffer);
-        const content = pdfData.text;
-
-
+        
+        // 将Buffer转换为Blob对象
+        const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+        const loader = new PDFLoader(blob);
+        const docs = await loader.load();
+        const content = docs[0].pageContent;
 
         //const content = convertHtmlToMarkdown(await page.content());
         //fs.writeFileSync('content.md', content);
