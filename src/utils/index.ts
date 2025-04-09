@@ -1,5 +1,8 @@
 import logger from './logging_config';
 import TurndownService from 'turndown';
+import html2md from 'html-to-md'
+import { Readability } from '@mozilla/readability';
+import { JSDOM } from 'jsdom';
 
 /**
  * 记录异步函数执行时间的装饰器函数
@@ -98,6 +101,25 @@ function isObject(value: any): boolean {
  */
 export function convertHtmlToMarkdown(html: string, options?: TurndownService.Options): string {
   try {
+
+    const dom = new JSDOM(html);
+    const reader = new Readability(dom.window.document);
+    const result = reader.parse();
+    console.log(result);
+    return result?.textContent || '';
+    return html2md(html,{skipTags:[
+      'div',
+      'html',
+      'body',
+      'nav',
+      'section',
+      'footer',
+      'main',
+      'aside',
+      'article',
+      'header',
+      'img'
+    ],});
     const turndownService = new TurndownService(options);
     return turndownService.turndown(html);
   } catch (error) {

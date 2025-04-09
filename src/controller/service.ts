@@ -28,6 +28,8 @@ import {
 import { timeExecutionAsync, convertHtmlToMarkdown } from '../utils';
 import { ActionModel } from './registry/views';
 import z from 'zod';
+import fs from 'fs';
+import pdfParse from 'pdf-parse';
 
 /**
  * 控制器类
@@ -305,8 +307,17 @@ export class Controller {
         pageExtractionLlm: BaseChatModel
       }): Promise<ActionResult> => {
         const page = await extraArgs.browser.getCurrentPage();
-        const content = convertHtmlToMarkdown(await page.content());
-      
+        const pdfBuffer = await page.pdf({ displayHeaderFooter: false, printBackground: false });
+
+        //const pdfPath = `./${Date.now()}.pdf`;
+        //fs.writeFileSync(pdfPath, pdfBuffer);
+        const pdfData = await pdfParse(pdfBuffer);
+        const content = pdfData.text;
+
+
+
+        //const content = convertHtmlToMarkdown(await page.content());
+        //fs.writeFileSync('content.md', content);
 
         const prompt = 'Your task is to extract the content of the page. You will be given a page and a goal and you should extract all relevant information around this goal from the page. If the goal is vague, summarize the page. Respond in json format. Extraction goal: {goal}, Page: {page}';
         const template = new PromptTemplate({

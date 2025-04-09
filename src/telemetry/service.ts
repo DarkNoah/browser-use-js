@@ -39,7 +39,11 @@ export class ProductTelemetry {
     }
     instance = this;
 
-    const telemetryDisabled = process.env.ANONYMIZED_TELEMETRY?.toLowerCase() === 'false';
+    let telemetryDisabled = true;
+    if (process.env.ANONYMIZED_TELEMETRY) {
+      telemetryDisabled = process.env.ANONYMIZED_TELEMETRY?.toLowerCase() === 'false';
+    }
+    
     this.debugLogging = process.env.BROWSER_USE_LOGGING_LEVEL?.toLowerCase() === 'debug';
 
     if (telemetryDisabled) {

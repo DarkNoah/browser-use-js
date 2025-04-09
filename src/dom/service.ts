@@ -10,6 +10,9 @@ import { Coordinates, CoordinateSet, ViewportInfo } from './history_tree_process
 import fs from 'fs';
 import path from 'path';
 
+
+
+
 /**
  * DOM服务类
  * 处理网页DOM的提取和操作
@@ -22,7 +25,8 @@ export class DomService {
   constructor(page: Page) { 
     this.page = page;
     this.xpathCache = {};
-    this.jsCode = fs.readFileSync(path.join(__dirname, 'buildDomTree.js'), 'utf8');
+    const pathToFile = require.resolve('./buildDomTree.js');
+    this.jsCode = fs.readFileSync(pathToFile, 'utf8');
   }
 
   /**

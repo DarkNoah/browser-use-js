@@ -24,13 +24,13 @@ async function main() {
 
 
   // 定义任务
-  const task = '找到browser-use的创始人，并为他们起草一条简短的个性化消息';
+  const task = '找一下广州最近的aiagent比赛';
 
   // 创建代理实例
   const agent = new Agent({
     task, llm, useVision: false, initialActions: [
       //{'open_tab': {'url': 'https://www.baidu.com'}}
-    ]});
+    ], plannerLlm: undefined });
 
   try {
     // 运行代理
