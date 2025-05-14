@@ -7,8 +7,7 @@ import logger from '../utils/logging_config';
 import { DOMTreeElement } from '../browser/context';
 import { DOMBaseNode, DOMElementNode, DOMTextNode, SelectorMap, DOMState } from './views';
 import { Coordinates, CoordinateSet, ViewportInfo } from './history_tree_processor/view';
-import fs from 'fs';
-import path from 'path';
+import { jsCode } from './buildDomTree';
 
 
 
@@ -25,8 +24,7 @@ export class DomService {
   constructor(page: Page) { 
     this.page = page;
     this.xpathCache = {};
-    const pathToFile = require.resolve('./buildDomTree.js');
-    this.jsCode = fs.readFileSync(pathToFile, 'utf8');
+    this.jsCode = jsCode;
   }
 
   /**

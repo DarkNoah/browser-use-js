@@ -160,3 +160,28 @@ export class SelectDropdownOptionAction {
     })
   }
 } 
+
+
+
+
+export class WaitAction { 
+  /**
+   * 等待时间，单位为秒
+   */
+  seconds: number = 3;
+
+  static schema() {
+    return z.object({
+      seconds: z.number().default(3).describe('等待时间，单位为秒默认3秒')
+    })
+  }
+}
+
+export class CloseTabAction {
+  pageId: number = 0;
+  static schema() {
+    return z.object({
+      pageId: z.number()
+    })
+  }
+}

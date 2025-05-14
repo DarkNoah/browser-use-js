@@ -1,3 +1,4 @@
+export const jsCode = `
 (
   args = {
     doHighlightElements: true,
@@ -59,12 +60,12 @@
     ];
     const colorIndex = index % colors.length;
     const baseColor = colors[colorIndex];
-    const backgroundColor = `${baseColor}1A`; // 10% opacity version of the color
+    const backgroundColor = \`\${baseColor}1A\`; // 10% opacity version of the color
 
     // Create highlight overlay
     const overlay = document.createElement("div");
     overlay.style.position = "absolute";
-    overlay.style.border = `2px solid ${baseColor}`;
+    overlay.style.border = \`2px solid \${baseColor}\`;
     overlay.style.backgroundColor = backgroundColor;
     overlay.style.pointerEvents = "none";
     overlay.style.boxSizing = "border-box";
@@ -81,10 +82,10 @@
       left += iframeRect.left;
     }
 
-    overlay.style.top = `${top}px`;
-    overlay.style.left = `${left}px`;
-    overlay.style.width = `${rect.width}px`;
-    overlay.style.height = `${rect.height}px`;
+    overlay.style.top = \`\${top}px\`;
+    overlay.style.left = \`\${left}px\`;
+    overlay.style.width = \`\${rect.width}px\`;
+    overlay.style.height = \`\${rect.height}px\`;
 
     // Create label
     const label = document.createElement("div");
@@ -94,7 +95,7 @@
     label.style.color = "white";
     label.style.padding = "1px 4px";
     label.style.borderRadius = "4px";
-    label.style.fontSize = `${Math.min(12, Math.max(8, rect.height / 2))}px`; // Responsive font size
+    label.style.fontSize = \`\${Math.min(12, Math.max(8, rect.height / 2))}px\`; // Responsive font size
     label.textContent = index;
 
     // Calculate label position
@@ -112,8 +113,8 @@
       labelLeft = left + rect.width - labelWidth;
     }
 
-    label.style.top = `${labelTop}px`;
-    label.style.left = `${labelLeft}px`;
+    label.style.top = \`\${labelTop}px\`;
+    label.style.left = \`\${labelLeft}px\`;
 
     // Add to container
     container.appendChild(overlay);
@@ -122,7 +123,7 @@
     // Store reference for cleanup
     element.setAttribute(
       "browser-user-highlight-id",
-      `playwright-highlight-${index}`
+      \`playwright-highlight-\${index}\`
     );
 
     return index + 1;
@@ -158,8 +159,8 @@
       }
 
       const tagName = currentElement.nodeName.toLowerCase();
-      const xpathIndex = index > 0 ? `[${index + 1}]` : "";
-      segments.unshift(`${tagName}${xpathIndex}`);
+      const xpathIndex = index > 0 ? \`[\${index + 1}]\` : "";
+      segments.unshift(\`\${tagName}\${xpathIndex}\`);
 
       currentElement = currentElement.parentNode;
     }
@@ -304,7 +305,7 @@
         ];
 
         for (const type of eventTypes) {
-          const handler = el[`on${type}`];
+          const handler = el[\`on\${type}\`];
           if (handler) {
             listeners[type] = [
               {
@@ -520,7 +521,7 @@
     if (node.nodeType === Node.TEXT_NODE) {
       const textContent = node.textContent.trim();
       if (textContent && isTextNodeVisible(node)) {
-        const id = `${ID.current++}`;
+        const id = \`\${ID.current++}\`;
 
         DOM_HASH_MAP[id] = {
           type: "TEXT_NODE",
@@ -648,7 +649,7 @@
 
     // Only add iframeContext if we're inside an iframe
     // if (parentIframe) {
-    //     nodeData.iframeContext = `iframe[src="${parentIframe.src || ''}"]`;
+    //     nodeData.iframeContext = \`iframe[src="\${parentIframe.src || ''}\"]\`;
     // }
 
     // Only add shadowRoot field if it exists
@@ -695,7 +696,7 @@
     }
 
     // NOTE: We register the node to the hash map.
-    const id = `${ID.current++}`;
+    const id = \`\${ID.current++}\`;
     DOM_HASH_MAP[id] = nodeData;
 
     return id;
@@ -705,3 +706,4 @@
 
   return { rootId, map: DOM_HASH_MAP };
 };
+`

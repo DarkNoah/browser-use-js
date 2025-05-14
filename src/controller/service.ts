@@ -23,7 +23,9 @@ import {
   ExtractContentAction,
   GetDropdownOptionsAction,
   SelectDropdownOptionAction,
-  ScrolToTextAction
+  ScrolToTextAction,
+  WaitAction,
+  CloseTabAction
 } from './views';
 import { timeExecutionAsync, convertHtmlToMarkdown } from '../utils';
 import { ActionModel } from './registry/views';
@@ -168,6 +170,20 @@ export class Controller {
       }
     );
 
+    // 等待动作
+    this.registry.action('等待 x 秒 ,默认 3 秒','wait',WaitAction, WaitAction.schema())(
+      async (params: WaitAction, extraArgs: {
+        browser: BrowserContext,
+      }): Promise<ActionResult> => {
+        const message = `🕒  等待 ${params.seconds} 秒`;
+        logger.info(message);
+        return new ActionResult({
+          extractedContent: message,
+          includeInMemory: true
+        });
+      }
+    );
+
     // 元素交互动作
     this.registry.action('点击元素','click_element',ClickElementAction, ClickElementAction.schema())(
       async (params: ClickElementAction, extraArgs: {
@@ -259,6 +275,36 @@ export class Controller {
       }
     );
 
+
+
+    this.registry.action('Save the current page as a PDF file','save_pdf',InputTextAction, InputTextAction.schema())(
+      async (params: InputTextAction, extraArgs: {
+        browser: BrowserContext
+      }): Promise<ActionResult> => {
+        const page = await extraArgs.browser.getCurrentPage()
+        const short_url = page.url().replace(/^https?:\/\/(?:www\.)?/, '').replace(/\/$/, '');
+        const slug = short_url.replace(/[^a-zA-Z0-9]+/g, '-')             // 替换非字母数字为 '-'
+        .replace(/^-+|-+$/g, '')                    // 去除首尾的 '-'
+        .toLowerCase();                             // 转为小写
+        const sanitized_filename = `${slug}.pdf`
+  
+        await page.emulateMedia({media:'screen'})
+        await page.pdf({
+          path: sanitized_filename,
+          format: 'A4',
+          printBackground: false
+        })
+        const msg = `Saving page with URL {page.url} as PDF to ./${sanitized_filename}`
+        logger.info(msg)
+        
+        return new ActionResult({
+          extractedContent: msg,
+          includeInMemory: true
+        });
+      }
+    );
+
+
     // 标签页管理动作
     this.registry.action('切换标签页','switch_tab',SwitchTabAction, SwitchTabAction.schema())(
       async (params: SwitchTabAction, extraArgs: {
@@ -295,6 +341,26 @@ export class Controller {
       }
     );
 
+    this.registry.action('关闭标签页','close_tab',CloseTabAction, CloseTabAction.schema())(
+      async (params: CloseTabAction, extraArgs: {
+        browser: BrowserContext }): Promise<ActionResult> => {
+        await extraArgs.browser.switchToTab(params.pageId);
+        // 等待标签页准备就绪
+        const page = await extraArgs.browser.getCurrentPage();
+        const url = page.url();
+        await page.close()
+			  const msg = `❌  Closed tab #${params.pageId} with url ${url}`
+        return new ActionResult({
+          extractedContent: msg,
+          includeInMemory: true
+        });
+      }
+    );
+
+
+
+
+    
     // 提取页面内容
     this.registry.action(
       'Extract page content to retrieve specific information from the page, e.g. all company names, a specifc description, all information about, links with companies in structured format or simply links'

@@ -21,7 +21,6 @@ import { BrowserState, BrowserStateHistory } from '../browser/views';
 import { object, z } from 'zod';
 import { HistoryTreeProcessor } from '../dom/history_tree_processor';
 import { Jimp } from 'jimp';
-import GIFEncoder from 'gifencoder';
 import { ActionModel } from '../controller/registry/views';
 
 
