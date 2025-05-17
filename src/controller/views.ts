@@ -1,25 +1,24 @@
 import z from "zod";
 
 export class SearchGoogleAction {
-  query: string = '';
+  query: string = "";
   static schema() {
     return z.object({
-      query: z.string().describe('搜索查询')
-    })
+      query: z.string().describe("搜索查询"),
+    });
   }
 }
 
 export class GoToUrlAction {
-  url: string = '';
+  url: string = "";
   static schema() {
     return z.object({
-      url: z.string().describe('目标URL')
-    })
+      url: z.string().describe("目标URL"),
+    });
   }
 }
 
 export class ClickElementAction {
-
   index: number = -1;
 
   xpath?: string;
@@ -27,53 +26,49 @@ export class ClickElementAction {
   static schema() {
     return z.object({
       index: z.number(),
-      xpath: z.string().describe('XPath').optional()
-    })
+      xpath: z.string().describe("XPath").optional(),
+    });
   }
 }
 
 export class InputTextAction {
   index: number = -1;
-  text: string = '';
+  text: string = "";
   xpath?: string;
 
   static schema() {
     return z.object({
       index: z.number(),
       text: z.string(),
-      xpath: z.string().describe('XPath').optional()
-    })
+      xpath: z.string().describe("XPath").optional(),
+    });
   }
 }
 
 export class DoneAction {
-  text: string = '';
+  text: string = "";
   static schema() {
     return z.object({
-      text: z.string()
-    })
+      text: z.string(),
+    });
   }
 }
 
-
 export class SwitchTabAction {
-
   pageId: number = 0;
   static schema() {
     return z.object({
-      pageId: z.number()
-    })
+      pageId: z.number(),
+    });
   }
 }
 
-
 export class OpenTabAction {
-
-  url: string = '';
+  url: string = "";
   static schema() {
     return z.object({
-      url: z.string()
-    })
+      url: z.string(),
+    });
   }
 }
 
@@ -81,50 +76,43 @@ export class ScrollAction {
   amount?: number;
   static schema() {
     return z.object({
-      amount: z.number().optional()
-    })
+      amount: z.number().optional(),
+    });
   }
 }
 
-export class ScrolToTextAction { 
-  text!: string
+export class ScrolToTextAction {
+  text!: string;
 
   static schema() {
     return z.object({
-      text: z.string()
-    })
+      text: z.string(),
+    });
   }
 }
-
-
-
 
 export class SendKeysAction {
-
-  keys: string = '';
+  keys: string = "";
   static schema() {
     return z.object({
-      keys: z.string()
-    })
+      keys: z.string(),
+    });
   }
 }
-
-
-
 
 export class NoParamsAction {
   // 空对象，表示没有参数的动作
   static schema() {
-    return z.object({})
+    return z.object({});
   }
 }
 
 export class ExtractContentAction {
-  goal: string = '';
+  goal: string = "";
   static schema() {
     return z.object({
-      goal: z.string()
-    })
+      goal: z.string(),
+    });
   }
 }
 
@@ -132,12 +120,11 @@ export class ExtractContentAction {
  * 获取下拉菜单选项动作
  */
 export class GetDropdownOptionsAction {
-
   index: number = -1;
   static schema() {
     return z.object({
-      index: z.number()
-    })
+      index: z.number(),
+    });
   }
 }
 
@@ -149,22 +136,19 @@ export class SelectDropdownOptionAction {
    * 元素索引
    */
   index: number = -1;
-  
+
   /**
    * 选项文本
    */
-  text: string = '';
+  text: string = "";
   static schema() {
     return z.object({
-      text: z.string().describe('选项文本')
-    })
+      text: z.string().describe("选项文本"),
+    });
   }
-} 
+}
 
-
-
-
-export class WaitAction { 
+export class WaitAction {
   /**
    * 等待时间，单位为秒
    */
@@ -172,8 +156,8 @@ export class WaitAction {
 
   static schema() {
     return z.object({
-      seconds: z.number().default(3).describe('等待时间，单位为秒默认3秒')
-    })
+      seconds: z.number().default(3).describe("等待时间，单位为秒默认3秒"),
+    });
   }
 }
 
@@ -181,7 +165,13 @@ export class CloseTabAction {
   pageId: number = 0;
   static schema() {
     return z.object({
-      pageId: z.number()
-    })
+      pageId: z.number(),
+    });
+  }
+}
+
+export class SavePdfAction {
+  static schema() {
+    return z.object({});
   }
 }

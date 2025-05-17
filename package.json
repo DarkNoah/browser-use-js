@@ -1,6 +1,6 @@
 {
   "name": "browser-use-js",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Enable AI to control your browser - TypeScript version",
   "homepage": "https://github.com/DarkNoah/browser-use-js#readme",
   "publishConfig": {
@@ -37,6 +37,7 @@
     "html-to-md": "^0.8.7",
     "https-proxy-agent": "^7.0.6",
     "jimp": "^1.6.0",
+    "pdf-parse": "^1.1.1",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
     "playwright": "^1.51.1",

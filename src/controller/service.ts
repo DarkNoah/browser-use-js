@@ -2,22 +2,22 @@
  * 控制器服务
  * 负责管理和执行动作
  */
-import { ChatOpenAI } from '@langchain/openai';
-import { PromptTemplate } from '@langchain/core/prompts';
-import { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import logger from '../utils/logging_config';
-import { ActionResult } from '../agent/views';
-import { Registry } from './registry/service';
-import { BrowserContext } from '../browser/context';
-import { 
-  ClickElementAction, 
-  DoneAction, 
-  GoToUrlAction, 
-  InputTextAction, 
-  NoParamsAction, 
-  OpenTabAction, 
-  ScrollAction, 
-  SearchGoogleAction, 
+import { ChatOpenAI } from "@langchain/openai";
+import { PromptTemplate } from "@langchain/core/prompts";
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import logger from "../utils/logging_config";
+import { ActionResult } from "../agent/views";
+import { Registry } from "./registry/service";
+import { BrowserContext } from "../browser/context";
+import {
+  ClickElementAction,
+  DoneAction,
+  GoToUrlAction,
+  InputTextAction,
+  NoParamsAction,
+  OpenTabAction,
+  ScrollAction,
+  SearchGoogleAction,
   SendKeysAction,
   SwitchTabAction,
   ExtractContentAction,
@@ -25,13 +25,14 @@ import {
   SelectDropdownOptionAction,
   ScrolToTextAction,
   WaitAction,
-  CloseTabAction
-} from './views';
-import { timeExecutionAsync, convertHtmlToMarkdown } from '../utils';
-import { ActionModel } from './registry/views';
-import z from 'zod';
-import fs from 'fs';
-import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
+  CloseTabAction,
+  SavePdfAction,
+} from "./views";
+import { timeExecutionAsync, convertHtmlToMarkdown } from "../utils";
+import { ActionModel } from "./registry/views";
+import z from "zod";
+import fs from "fs";
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 
 /**
  * 控制器类
@@ -42,12 +43,12 @@ export class Controller {
    * 动作注册器
    */
   readonly registry: Registry;
-  
+
   /**
    * 排除的动作
    */
   private excludeActions: string[];
-  
+
   /**
    * 输出模型
    */
@@ -71,24 +72,30 @@ export class Controller {
   private _registerDefaultActions(): void {
     // 如果有自定义输出模型
     if (this.outputModel) {
-      this.registry.action('完成任务','done', this.outputModel, this.outputModel.schema())(
-        async (params: any): Promise<ActionResult> => {
-          return new ActionResult({ 
-            isDone: true, 
-            extractedContent: JSON.stringify(params) 
-          });
-        }
-      );
+      this.registry.action(
+        "完成任务",
+        "done",
+        this.outputModel,
+        this.outputModel.schema()
+      )(async (params: any): Promise<ActionResult> => {
+        return new ActionResult({
+          isDone: true,
+          extractedContent: JSON.stringify(params),
+        });
+      });
     } else {
       // 默认完成动作
-      this.registry.action('完成任务','done' ,DoneAction, DoneAction.schema())(
-        async (params: DoneAction): Promise<ActionResult> => {
-          return new ActionResult({ 
-            isDone: true, 
-            extractedContent: params.text 
-          });
-        }
-      );
+      this.registry.action(
+        "完成任务",
+        "done",
+        DoneAction,
+        DoneAction.schema()
+      )(async (params: DoneAction): Promise<ActionResult> => {
+        return new ActionResult({
+          isDone: true,
+          extractedContent: params.text,
+        });
+      });
     }
 
     // 基本导航动作
@@ -101,10 +108,10 @@ export class Controller {
     //     const page = await browser.getCurrentPage();
     //     await page.goto(`https://www.google.com/search?q=${params.query}&udm=14`);
     //     await page.waitForLoadState();
-        
+
     //     const message = `🔍 在Google中搜索了"${params.query}"`;
     //     logger.info(message);
-        
+
     //     return new ActionResult({
     //       extractedContent: message,
     //       includeInMemory: true
@@ -112,89 +119,125 @@ export class Controller {
     //   }
     // );
     this.registry.action(
-      'Search the query in Google in the current tab, the query should be a search query like humans search in Google, concrete and not vague or super long. More the single most important items. ',
-      'search_baidu',
+      "Search the query in Google in the current tab, the query should be a search query like humans search in Google, concrete and not vague or super long. More the single most important items. ",
+      "search_baidu",
       SearchGoogleAction,
       SearchGoogleAction.schema()
     )(
-      async (params: SearchGoogleAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+      async (
+        params: SearchGoogleAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
         const page = await browser.getCurrentPage();
         await page.goto(`https://www.baidu.com/s?wd=${params.query}`);
         await page.waitForLoadState();
-        
+
         const message = `🔍 在百度中搜索了"${params.query}"`;
         logger.info(message);
-        
+
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
-
-    this.registry.action('在当前标签页中导航到URL','go_to_url', GoToUrlAction, GoToUrlAction.schema())(
-      async (params: GoToUrlAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+    this.registry.action(
+      "在当前标签页中导航到URL",
+      "go_to_url",
+      GoToUrlAction,
+      GoToUrlAction.schema()
+    )(
+      async (
+        params: GoToUrlAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
-        const page = await browser.getCurrentPage()
+        const page = await browser.getCurrentPage();
         await page.goto(params.url);
         await page.waitForLoadState();
         const message = `🔗 导航到 ${params.url}`;
         logger.info(message);
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
-    this.registry.action('返回上一页','go_back',NoParamsAction, NoParamsAction.schema())(
-      async (_: NoParamsAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+    this.registry.action(
+      "返回上一页",
+      "go_back",
+      NoParamsAction,
+      NoParamsAction.schema()
+    )(
+      async (
+        _: NoParamsAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
         await browser.goBack();
-        
-        const message = '🔙 返回上一页';
+
+        const message = "🔙 返回上一页";
         logger.info(message);
-        
+
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
     // 等待动作
-    this.registry.action('等待 x 秒 ,默认 3 秒','wait',WaitAction, WaitAction.schema())(
-      async (params: WaitAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+    this.registry.action(
+      "等待 x 秒 ,默认 3 秒",
+      "wait",
+      WaitAction,
+      WaitAction.schema()
+    )(
+      async (
+        params: WaitAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const message = `🕒  等待 ${params.seconds} 秒`;
         logger.info(message);
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
     // 元素交互动作
-    this.registry.action('点击元素','click_element',ClickElementAction, ClickElementAction.schema())(
-      async (params: ClickElementAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+    this.registry.action(
+      "点击元素",
+      "click_element",
+      ClickElementAction,
+      ClickElementAction.schema()
+    )(
+      async (
+        params: ClickElementAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
         const session = await browser.getSession();
         const state = session.cachedState;
 
         if (!(params.index in state.selectorMap)) {
-          throw new Error(`索引为 ${params.index} 的元素不存在 - 请重试或使用其他动作`);
+          throw new Error(
+            `索引为 ${params.index} 的元素不存在 - 请重试或使用其他动作`
+          );
         }
 
         const elementNode = state.selectorMap[params.index];
@@ -206,7 +249,7 @@ export class Controller {
           logger.info(message);
           return new ActionResult({
             extractedContent: message,
-            includeInMemory: true
+            includeInMemory: true,
           });
         }
 
@@ -217,169 +260,219 @@ export class Controller {
           if (downloadPath) {
             message = `💾 下载文件到 ${downloadPath}`;
           } else {
-            message = `🖱️ 点击了索引为 ${params.index} 的按钮: ${elementNode.getAllTextTillNextClickableElement(2)}`;
+            message = `🖱️ 点击了索引为 ${
+              params.index
+            } 的按钮: ${elementNode.getAllTextTillNextClickableElement(2)}`;
           }
 
           logger.info(message);
           logger.debug(`元素xpath: ${elementNode.xpath}`);
-          
+
           const pages = session.context.pages();
           if (pages.length > initialPages) {
-            const newTabMessage = '新标签页已打开 - 正在切换到该标签页';
+            const newTabMessage = "新标签页已打开 - 正在切换到该标签页";
             message += ` - ${newTabMessage}`;
             logger.info(newTabMessage);
             await browser.switchToTab(-1);
           }
-          
+
           return new ActionResult({
             extractedContent: message,
-            includeInMemory: true
+            includeInMemory: true,
           });
         } catch (error) {
-          logger.error(`索引为 ${params.index} 的元素不可点击 - 可能页面已更改`);
+          logger.error(
+            `索引为 ${params.index} 的元素不可点击 - 可能页面已更改`
+          );
           return new ActionResult({ error: String(error) });
         }
       }
     );
 
-    this.registry.action('在交互元素中输入文本','input_text',InputTextAction, InputTextAction.schema())(
-      async (params: InputTextAction, extraArgs: {
-        browser: BrowserContext,
-        hasSensitiveData: boolean
-      }): Promise<ActionResult> => {
+    this.registry.action(
+      "在交互元素中输入文本",
+      "input_text",
+      InputTextAction,
+      InputTextAction.schema()
+    )(
+      async (
+        params: InputTextAction,
+        extraArgs: {
+          browser: BrowserContext;
+          hasSensitiveData: boolean;
+        }
+      ): Promise<ActionResult> => {
         const { browser, hasSensitiveData = false } = extraArgs;
         const session = await browser.getSession();
         const state = session.cachedState;
 
         if (!(params.index in state.selectorMap)) {
-          throw new Error(`索引为 ${params.index} 的元素不存在 - 请重试或使用其他动作`);
+          throw new Error(
+            `索引为 ${params.index} 的元素不存在 - 请重试或使用其他动作`
+          );
         }
 
         const elementNode = state.selectorMap[params.index];
         await browser._inputTextElementNode(elementNode, params.text);
-        
+
         let message: string;
         if (!hasSensitiveData) {
           message = `⌨️ 在索引为 ${params.index} 的输入框中输入 ${params.text}`;
         } else {
           message = `⌨️ 在索引为 ${params.index} 的输入框中输入敏感数据`;
         }
-        
+
         logger.info(message);
         logger.debug(`元素xpath: ${elementNode.xpath}`);
-        
+
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
+    this.registry.action(
+      "Save the current page as a PDF file",
+      "save_pdf",
+      SavePdfAction,
+      SavePdfAction.schema()
+    )(
+      async (
+        params: SavePdfAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
+        const page = await extraArgs.browser.getCurrentPage();
+        const short_url = page
+          .url()
+          .replace(/^https?:\/\/(?:www\.)?/, "")
+          .replace(/\/$/, "");
+        const slug = short_url
+          .replace(/[^a-zA-Z0-9]+/g, "-") // 替换非字母数字为 '-'
+          .replace(/^-+|-+$/g, "") // 去除首尾的 '-'
+          .toLowerCase(); // 转为小写
+        const sanitized_filename = `${slug}.pdf`;
 
-
-    this.registry.action('Save the current page as a PDF file','save_pdf',InputTextAction, InputTextAction.schema())(
-      async (params: InputTextAction, extraArgs: {
-        browser: BrowserContext
-      }): Promise<ActionResult> => {
-        const page = await extraArgs.browser.getCurrentPage()
-        const short_url = page.url().replace(/^https?:\/\/(?:www\.)?/, '').replace(/\/$/, '');
-        const slug = short_url.replace(/[^a-zA-Z0-9]+/g, '-')             // 替换非字母数字为 '-'
-        .replace(/^-+|-+$/g, '')                    // 去除首尾的 '-'
-        .toLowerCase();                             // 转为小写
-        const sanitized_filename = `${slug}.pdf`
-  
-        await page.emulateMedia({media:'screen'})
+        await page.emulateMedia({ media: "screen" });
         await page.pdf({
           path: sanitized_filename,
-          format: 'A4',
-          printBackground: false
-        })
-        const msg = `Saving page with URL {page.url} as PDF to ./${sanitized_filename}`
-        logger.info(msg)
-        
+          format: "A4",
+          printBackground: false,
+        });
+        const msg = `Saving page with URL {page.url} as PDF to ./${sanitized_filename}`;
+        logger.info(msg);
+
         return new ActionResult({
           extractedContent: msg,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
-
     // 标签页管理动作
-    this.registry.action('切换标签页','switch_tab',SwitchTabAction, SwitchTabAction.schema())(
-      async (params: SwitchTabAction, extraArgs: {
-        browser: BrowserContext }): Promise<ActionResult> => {
+    this.registry.action(
+      "切换标签页",
+      "switch_tab",
+      SwitchTabAction,
+      SwitchTabAction.schema()
+    )(
+      async (
+        params: SwitchTabAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         await extraArgs.browser.switchToTab(params.pageId);
         // 等待标签页准备就绪
         const page = await extraArgs.browser.getCurrentPage();
         await page.waitForLoadState();
-        
+
         const message = `🔄 切换到标签页 ${params.pageId}`;
         logger.info(message);
-        
+
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
-    this.registry.action('在新标签页中打开URL','open_tab', OpenTabAction,OpenTabAction.schema())(
-      async (params: OpenTabAction,
+    this.registry.action(
+      "在新标签页中打开URL",
+      "open_tab",
+      OpenTabAction,
+      OpenTabAction.schema()
+    )(
+      async (
+        params: OpenTabAction,
         extraArgs: {
-        browser: BrowserContext }
+          browser: BrowserContext;
+        }
       ): Promise<ActionResult> => {
         await extraArgs.browser.createNewTab(params.url);
-        
+
         const message = `🔗 在新标签页中打开 ${params.url}`;
         logger.info(message);
-        
+
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
-    this.registry.action('关闭标签页','close_tab',CloseTabAction, CloseTabAction.schema())(
-      async (params: CloseTabAction, extraArgs: {
-        browser: BrowserContext }): Promise<ActionResult> => {
+    this.registry.action(
+      "关闭标签页",
+      "close_tab",
+      CloseTabAction,
+      CloseTabAction.schema()
+    )(
+      async (
+        params: CloseTabAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         await extraArgs.browser.switchToTab(params.pageId);
         // 等待标签页准备就绪
         const page = await extraArgs.browser.getCurrentPage();
         const url = page.url();
-        await page.close()
-			  const msg = `❌  Closed tab #${params.pageId} with url ${url}`
+        await page.close();
+        const msg = `❌  Closed tab #${params.pageId} with url ${url}`;
         return new ActionResult({
           extractedContent: msg,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
-
-
-
-    
     // 提取页面内容
     this.registry.action(
-      'Extract page content to retrieve specific information from the page, e.g. all company names, a specifc description, all information about, links with companies in structured format or simply links'
-      , 'extract_content',
+      "Extract page content to retrieve specific information from the page, e.g. all company names, a specifc description, all information about, links with companies in structured format or simply links",
+      "extract_content",
       ExtractContentAction,
       ExtractContentAction.schema()
     )(
-      async (params: ExtractContentAction, extraArgs: {
-        browser: BrowserContext,
-        pageExtractionLlm: BaseChatModel
-      }): Promise<ActionResult> => {
+      async (
+        params: ExtractContentAction,
+        extraArgs: {
+          browser: BrowserContext;
+          pageExtractionLlm: BaseChatModel;
+        }
+      ): Promise<ActionResult> => {
         const page = await extraArgs.browser.getCurrentPage();
-        const pdfBuffer = await page.pdf({ displayHeaderFooter: false, printBackground: false });
+        const pdfBuffer = await page.pdf({
+          displayHeaderFooter: false,
+          printBackground: false,
+        });
 
         //const pdfPath = `./${Date.now()}.pdf`;
         //fs.writeFileSync(pdfPath, pdfBuffer);
-        
+
         // 将Buffer转换为Blob对象
-        const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+        const blob = new Blob([pdfBuffer], { type: "application/pdf" });
         const loader = new PDFLoader(blob);
         const docs = await loader.load();
         const content = docs[0].pageContent;
@@ -387,157 +480,177 @@ export class Controller {
         //const content = convertHtmlToMarkdown(await page.content());
         //fs.writeFileSync('content.md', content);
 
-        const prompt = 'Your task is to extract the content of the page. You will be given a page and a goal and you should extract all relevant information around this goal from the page. If the goal is vague, summarize the page. Respond in json format. Extraction goal: {goal}, Page: {page}';
+        const prompt =
+          "Your task is to extract the content of the page. You will be given a page and a goal and you should extract all relevant information around this goal from the page. If the goal is vague, summarize the page. Respond in json format. Extraction goal: {goal}, Page: {page}";
         const template = new PromptTemplate({
-          inputVariables: ['goal', 'page'],
-          template: prompt
+          inputVariables: ["goal", "page"],
+          template: prompt,
         });
-        
+
         try {
           // 使用已知值创建输入并格式化
           const formattedPrompt = await template.format({
-            goal: params.goal || '',
-            page: content
+            goal: params.goal || "",
+            page: content,
           });
-          
+
           // 调用LLM
-          const result = await extraArgs.pageExtractionLlm.invoke(formattedPrompt);
+          const result = await extraArgs.pageExtractionLlm.invoke(
+            formattedPrompt
+          );
           const message = `📄 从页面提取: ${result.content}`;
           logger.info(message);
-          
+
           return new ActionResult({
             extractedContent: message,
-            includeInMemory: true
+            includeInMemory: true,
           });
         } catch (error) {
           logger.debug(`提取内容时出错: ${error}`);
           const message = `📄 从页面提取: ${content}`;
           logger.info(message);
-          
+
           return new ActionResult({ extractedContent: message });
         }
       }
     );
 
     this.registry.action(
-      'Scroll down the page by pixel amount - if no amount is specified, scroll down one page',
-      'scroll_down',
+      "Scroll down the page by pixel amount - if no amount is specified, scroll down one page",
+      "scroll_down",
       ScrollAction,
       ScrollAction.schema()
     )(
-      async (params: ScrollAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+      async (
+        params: ScrollAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
         const page = await browser.getCurrentPage();
-        
+
         if (params.amount !== undefined) {
           await page.evaluate(`window.scrollBy(0, ${params.amount});`);
         } else {
-          await page.evaluate('window.scrollBy(0, window.innerHeight);');
+          await page.evaluate("window.scrollBy(0, window.innerHeight);");
         }
 
-        const amount = params.amount !== undefined ? `${params.amount} pixels` : 'one page';
+        const amount =
+          params.amount !== undefined ? `${params.amount} pixels` : "one page";
         const message = `🔍 向下滚动页面 ${amount}`;
         logger.info(message);
-        
+
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
     // scroll up
     this.registry.action(
-      'Scroll up the page by pixel amount - if no amount is specified, scroll up one page',
-      'scroll_up',
+      "Scroll up the page by pixel amount - if no amount is specified, scroll up one page",
+      "scroll_up",
       ScrollAction,
       ScrollAction.schema()
     )(
-      async (params: ScrollAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+      async (
+        params: ScrollAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
         const page = await browser.getCurrentPage();
-        
+
         if (params.amount !== undefined) {
           await page.evaluate(`window.scrollBy(0, -${params.amount});`);
         } else {
-          await page.evaluate('window.scrollBy(0, -window.innerHeight);');
+          await page.evaluate("window.scrollBy(0, -window.innerHeight);");
         }
 
-        const amount = params.amount !== undefined ? `${params.amount} pixels` : 'one page';
+        const amount =
+          params.amount !== undefined ? `${params.amount} pixels` : "one page";
         const message = `🔍 向上滚动页面 ${amount}`;
         logger.info(message);
-        
+
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
     // send keys
     this.registry.action(
-      'Send special key strings like Backspace, Insert, PageDown, Delete, Enter, also support shortcut keys like `Control+o`, `Control+Shift+T`. This will be used for keyboard.press. Please note the difference in shortcut keys for different operating systems',
-      'send_keys',
+      "Send special key strings like Backspace, Insert, PageDown, Delete, Enter, also support shortcut keys like `Control+o`, `Control+Shift+T`. This will be used for keyboard.press. Please note the difference in shortcut keys for different operating systems",
+      "send_keys",
       SendKeysAction,
       SendKeysAction.schema()
     )(
-      async (params: SendKeysAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+      async (
+        params: SendKeysAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
         const page = await browser.getCurrentPage();
-        
+
         await page.keyboard.press(params.keys);
-        
+
         const message = `⌨️ 发送按键: ${params.keys}`;
         logger.info(message);
-        
+
         return new ActionResult({
           extractedContent: message,
-          includeInMemory: true
+          includeInMemory: true,
         });
       }
     );
 
     // 滚动到指定文本
     this.registry.action(
-      'If you dont find something which you want to interact with, scroll to it',
-      'scroll_to_text',
+      "If you dont find something which you want to interact with, scroll to it",
+      "scroll_to_text",
       ScrolToTextAction,
       ScrolToTextAction.schema()
     )(
-      async (params: ScrolToTextAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+      async (
+        params: ScrolToTextAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
         const page = await browser.getCurrentPage();
-        
+
         try {
           // 尝试不同的定位策略
           const locators = [
             page.getByText(params.text, { exact: false }),
             page.locator(`text=${params.text}`),
-            page.locator(`//*[contains(text(), '${params.text}')]`)
+            page.locator(`//*[contains(text(), '${params.text}')]`),
           ];
 
           for (const locator of locators) {
             try {
               // 首先检查元素是否存在且可见
-              if (await locator.count() > 0 && await locator.first().isVisible()) {
+              if (
+                (await locator.count()) > 0 &&
+                (await locator.first().isVisible())
+              ) {
                 await locator.first().scrollIntoViewIfNeeded();
                 // 等待滚动完成
                 await page.waitForTimeout(500);
-                
+
                 const message = `🔍 滚动到文本: ${params.text}`;
                 logger.info(message);
-                
+
                 return new ActionResult({
                   extractedContent: message,
-                  includeInMemory: true
+                  includeInMemory: true,
                 });
               }
             } catch (error) {
@@ -548,19 +661,18 @@ export class Controller {
 
           const message = `文本 '${params.text}' 在页面上未找到或不可见`;
           logger.info(message);
-          
+
           return new ActionResult({
             extractedContent: message,
-            includeInMemory: true
+            includeInMemory: true,
           });
-          
         } catch (error) {
           const message = `滚动到文本 '${params.text}' 失败: ${error}`;
           logger.error(message);
-          
-          return new ActionResult({ 
+
+          return new ActionResult({
             error: message,
-            includeInMemory: true 
+            includeInMemory: true,
           });
         }
       }
@@ -568,21 +680,26 @@ export class Controller {
 
     // 获取下拉菜单选项
     this.registry.action(
-      'Get all options from a native dropdown',
-      'get_dropdown_options',
+      "Get all options from a native dropdown",
+      "get_dropdown_options",
       GetDropdownOptionsAction,
       GetDropdownOptionsAction.schema()
     )(
-      async (params: GetDropdownOptionsAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+      async (
+        params: GetDropdownOptionsAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
         const page = await browser.getCurrentPage();
         const session = await browser.getSession();
         const state = session.cachedState;
 
         if (!(params.index in state.selectorMap)) {
-          throw new Error(`索引为 ${params.index} 的元素不存在 - 请重试或使用其他动作`);
+          throw new Error(
+            `索引为 ${params.index} 的元素不存在 - 请重试或使用其他动作`
+          );
         }
 
         const elementNode = state.selectorMap[params.index];
@@ -594,7 +711,8 @@ export class Controller {
 
           for (const frame of page.frames()) {
             try {
-              const options: any = await frame.evaluate(`
+              const options: any = await frame.evaluate(
+                `
                 (xpath) => {
                   const select = document.evaluate(xpath, document, null,
                     XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
@@ -610,11 +728,15 @@ export class Controller {
                     name: select.name
                   };
                 }
-              `, elementNode.xpath);
+              `,
+                elementNode.xpath
+              );
 
               if (options) {
                 logger.debug(`在第 ${frameIndex} 帧中找到下拉菜单`);
-                logger.debug(`下拉菜单 ID: ${options.id}, 名称: ${options.name}`);
+                logger.debug(
+                  `下拉菜单 ID: ${options.id}, 名称: ${options.name}`
+                );
 
                 const formattedOptions = [];
                 for (const opt of options.options) {
@@ -633,30 +755,32 @@ export class Controller {
           }
 
           if (allOptions.length > 0) {
-            const message = allOptions.join('\n') + '\n使用select_dropdown_option中的精确文本字符串';
+            const message =
+              allOptions.join("\n") +
+              "\n使用select_dropdown_option中的精确文本字符串";
             logger.info(message);
-            
+
             return new ActionResult({
               extractedContent: message,
-              includeInMemory: true
+              includeInMemory: true,
             });
           } else {
-            const message = '在任何帧中没有找到下拉菜单选项';
+            const message = "在任何帧中没有找到下拉菜单选项";
             logger.info(message);
-            
+
             return new ActionResult({
               extractedContent: message,
-              includeInMemory: true
+              includeInMemory: true,
             });
           }
         } catch (error) {
           logger.error(`获取下拉菜单选项失败: ${error}`);
           const message = `获取选项时出错: ${error}`;
           logger.info(message);
-          
+
           return new ActionResult({
             extractedContent: message,
-            includeInMemory: true
+            includeInMemory: true,
           });
         }
       }
@@ -664,27 +788,34 @@ export class Controller {
 
     // 选择下拉菜单选项
     this.registry.action(
-      'Select dropdown option for interactive element index by the text of the option you want to select',
-      'select_dropdown_option',
+      "Select dropdown option for interactive element index by the text of the option you want to select",
+      "select_dropdown_option",
       SelectDropdownOptionAction,
       SelectDropdownOptionAction.schema()
     )(
-      async (params: SelectDropdownOptionAction, extraArgs: {
-        browser: BrowserContext,
-      }): Promise<ActionResult> => {
+      async (
+        params: SelectDropdownOptionAction,
+        extraArgs: {
+          browser: BrowserContext;
+        }
+      ): Promise<ActionResult> => {
         const { browser } = extraArgs;
         const page = await browser.getCurrentPage();
         const session = await browser.getSession();
         const state = session.cachedState;
 
         if (!(params.index in state.selectorMap)) {
-          throw new Error(`索引为 ${params.index} 的元素不存在 - 请重试或使用其他动作`);
+          throw new Error(
+            `索引为 ${params.index} 的元素不存在 - 请重试或使用其他动作`
+          );
         }
 
         const elementNode = state.selectorMap[params.index];
-        
-        logger.debug(`尝试为索引 ${params.index} 选择选项 '${params.text}', 使用xpath: ${elementNode.xpath}`);
-        logger.debug(`元素标签: ${elementNode.tag || '未知'}`);
+
+        logger.debug(
+          `尝试为索引 ${params.index} 选择选项 '${params.text}', 使用xpath: ${elementNode.xpath}`
+        );
+        logger.debug(`元素标签: ${elementNode.tag || "未知"}`);
 
         try {
           // 帧感知方法选择下拉菜单选项
@@ -693,7 +824,7 @@ export class Controller {
           for (const frame of page.frames()) {
             try {
               logger.debug(`尝试第 ${frameIndex} 帧`);
-              
+
               // 首先验证我们能在这个帧中找到下拉菜单
               const findDropdownJs = `
                 (xpath) => {
@@ -734,33 +865,46 @@ export class Controller {
                 availableOptions?: string[];
               }
 
-              const dropdownInfo = await frame.evaluate(findDropdownJs, elementNode.xpath) as DropdownInfo | null;
-              
+              const dropdownInfo = (await frame.evaluate(
+                findDropdownJs,
+                elementNode.xpath
+              )) as DropdownInfo | null;
+
               if (dropdownInfo) {
                 if (!dropdownInfo.found) {
-                  logger.error(`第 ${frameIndex} 帧错误: ${dropdownInfo.error || '未知错误'}`);
+                  logger.error(
+                    `第 ${frameIndex} 帧错误: ${
+                      dropdownInfo.error || "未知错误"
+                    }`
+                  );
                   frameIndex++;
                   continue;
                 }
-                
-                logger.debug(`在第 ${frameIndex} 帧中找到下拉菜单: ${JSON.stringify(dropdownInfo)}`);
-                
+
+                logger.debug(
+                  `在第 ${frameIndex} 帧中找到下拉菜单: ${JSON.stringify(
+                    dropdownInfo
+                  )}`
+                );
+
                 try {
                   // 尝试使用playwright的内置选择器方法
-                  const selector = '//' + elementNode.xpath;
-                  await frame.locator(selector).selectOption({ label: params.text }, { timeout: 2000 });
-                  
+                  const selector = "//" + elementNode.xpath;
+                  await frame
+                    .locator(selector)
+                    .selectOption({ label: params.text }, { timeout: 2000 });
+
                   const message = `📋 在索引为 ${params.index} 的下拉菜单中选择了选项: ${params.text}`;
                   logger.info(message);
-                  
+
                   return new ActionResult({
                     extractedContent: message,
-                    includeInMemory: true
+                    includeInMemory: true,
                   });
                 } catch (selectError) {
                   logger.debug(`使用selectOption方法失败: ${selectError}`);
                   logger.debug(`尝试备用JavaScript方法`);
-                  
+
                   // 定义结果类型
                   interface SelectResult {
                     success: boolean;
@@ -771,7 +915,7 @@ export class Controller {
                     selectName?: string;
                     availableOptions?: string[];
                   }
-                  
+
                   // 如果内置选择方法失败，尝试使用JavaScript
                   const selectJs = `
                     (xpath, optionText) => {
@@ -813,24 +957,37 @@ export class Controller {
                       }
                     }
                   `;
-                  
-                  const result = await frame.evaluate(selectJs, [elementNode.xpath, params.text]) as SelectResult;
-                  
+
+                  const result = (await frame.evaluate(selectJs, [
+                    elementNode.xpath,
+                    params.text,
+                  ])) as SelectResult;
+
                   if (result.success) {
                     logger.debug(`在第 ${frameIndex} 帧中选择了下拉菜单选项`);
-                    logger.debug(`下拉菜单 ID: ${result.selectId || '无ID'}, 名称: ${result.selectName || '无名称'}, 值: ${result.value || '无值'}`);
-                    
-                    const message = `📋 在索引为 ${params.index} 的下拉菜单中选择了选项: ${params.text} (值: ${result.value || '未知'})`;
+                    logger.debug(
+                      `下拉菜单 ID: ${result.selectId || "无ID"}, 名称: ${
+                        result.selectName || "无名称"
+                      }, 值: ${result.value || "无值"}`
+                    );
+
+                    const message = `📋 在索引为 ${
+                      params.index
+                    } 的下拉菜单中选择了选项: ${params.text} (值: ${
+                      result.value || "未知"
+                    })`;
                     logger.info(message);
-                    
+
                     return new ActionResult({
                       extractedContent: message,
-                      includeInMemory: true
+                      includeInMemory: true,
                     });
                   } else {
-                    logger.debug(`选择失败: ${result.error || '未知错误'}`);
+                    logger.debug(`选择失败: ${result.error || "未知错误"}`);
                     if (result.availableOptions) {
-                      logger.debug(`可用选项: ${JSON.stringify(result.availableOptions)}`);
+                      logger.debug(
+                        `可用选项: ${JSON.stringify(result.availableOptions)}`
+                      );
                     }
                   }
                 }
@@ -844,30 +1001,34 @@ export class Controller {
 
           const message = `在下拉菜单中未找到文本为 '${params.text}' 的选项`;
           logger.info(message);
-          
+
           return new ActionResult({
             extractedContent: message,
-            includeInMemory: true
+            includeInMemory: true,
           });
         } catch (error) {
           logger.error(`选择下拉菜单选项失败: ${error}`);
           const message = `选择选项时出错: ${error}`;
           logger.info(message);
-          
+
           return new ActionResult({
             error: String(error),
             extractedContent: message,
-            includeInMemory: true
+            includeInMemory: true,
           });
         }
       }
     );
   }
 
-  action(description: string, name:string, paramModel: any, schema: z.ZodSchema) {
-    return this.registry.action(description,name, paramModel, schema)
+  action(
+    description: string,
+    name: string,
+    paramModel: any,
+    schema: z.ZodSchema
+  ) {
+    return this.registry.action(description, name, paramModel, schema);
   }
-
 
   /**
    * 执行单个动作
@@ -887,14 +1048,16 @@ export class Controller {
   ): Promise<ActionResult> {
     try {
       return await timeExecutionAsync<ActionResult>(async () => {
-        const actionData = Object.entries(action).find(([_, value]) => value !== undefined);
-        
+        const actionData = Object.entries(action).find(
+          ([_, value]) => value !== undefined
+        );
+
         if (!actionData) {
           return new ActionResult();
         }
-        
+
         const [actionName, params] = actionData;
-        
+
         // 执行动作并记录
         const result = await this.registry.executeAction(
           actionName,
@@ -904,9 +1067,9 @@ export class Controller {
           sensitiveData,
           availableFilePaths
         );
-        
+
         // 处理结果
-        if (typeof result === 'string') {
+        if (typeof result === "string") {
           return new ActionResult({ extractedContent: result });
         } else if (result instanceof ActionResult) {
           return result;
@@ -915,13 +1078,12 @@ export class Controller {
         } else {
           throw new Error(`非法的动作执行结果类型: ${typeof result}`);
         }
-       },'--act')
-      
+      }, "--act");
     } catch (error) {
       throw error;
     }
   }
-  
+
   /**
    * 执行多个动作
    * @param actions 要执行的动作列表
@@ -943,70 +1105,80 @@ export class Controller {
     availableFilePaths?: string[]
   ): Promise<ActionResult[]> {
     const results: ActionResult[] = [];
-    
+
     // 获取会话和初始元素哈希
     const session = await browserContext.getSession();
     const cachedSelectorMap = session.cachedState.selectorMap;
-    
+
     // 收集初始元素IDs（不使用哈希，因为当前接口中不存在）
     const cached_path_hashes = new Set(
-      Object.values(cachedSelectorMap).map(e => e.hash.branchPathHash)
+      Object.values(cachedSelectorMap).map((e) => e.hash.branchPathHash)
     );
-    
+
     // 检查是否暂停
     checkBreakIfPaused();
-    
+
     await browserContext.removeHighlights();
-    
+
     // 逐个执行动作
     for (let i = 0; i < actions.length; i++) {
       const action = actions[i];
-      
+
       // 检查是否暂停
       checkBreakIfPaused();
-      
-      if (action.getIndex() !== undefined && i !== 0) { 
+
+      if (action.getIndex() !== undefined && i !== 0) {
         const newState = await browserContext.getState();
         const new_path_hashes = new Set(
-          Object.values(newState.selectorMap).map(e => e.hash.branchPathHash)
+          Object.values(newState.selectorMap).map((e) => e.hash.branchPathHash)
         );
 
-        if (checkForNewElements && !isSubset(new_path_hashes, cached_path_hashes)) {
+        if (
+          checkForNewElements &&
+          !isSubset(new_path_hashes, cached_path_hashes)
+        ) {
           const msg = `动作 ${i} / ${actions.length} 执行后出现了新内容`;
-          logger.info(msg)
-          results.push(new ActionResult({ 
-            extractedContent: msg, 
-            includeInMemory: true 
-          }));
-          break
+          logger.info(msg);
+          results.push(
+            new ActionResult({
+              extractedContent: msg,
+              includeInMemory: true,
+            })
+          );
+          break;
         }
       }
       checkBreakIfPaused();
 
-      results.push(await this.act(
-        action, 
-        browserContext, 
-        pageExtractionLlm, 
-        sensitiveData, 
-        availableFilePaths
-      ));
+      results.push(
+        await this.act(
+          action,
+          browserContext,
+          pageExtractionLlm,
+          sensitiveData,
+          availableFilePaths
+        )
+      );
 
       logger.debug(`执行了动作 ${i + 1} / ${actions.length}`);
-      
+
       // 检查是否终止
-      if (results[results.length - 1].isDone || 
-          results[results.length - 1].error || 
-          i === actions.length - 1) {
+      if (
+        results[results.length - 1].isDone ||
+        results[results.length - 1].error ||
+        i === actions.length - 1
+      ) {
         break;
       }
 
-      await new Promise(resolve => setTimeout(resolve, browserContext.config.waitBetweenActions));
+      await new Promise((resolve) =>
+        setTimeout(resolve, browserContext.config.waitBetweenActions)
+      );
     }
-    
+
     return results;
   }
-
-} 
+}
 
 /**
  * 检查集合A是否是集合B的子集
@@ -1021,4 +1193,4 @@ function isSubset<T>(setA: Set<T>, setB: Set<T>): boolean {
     }
   }
   return true;
-} 
+}
